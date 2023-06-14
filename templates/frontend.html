@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot</title>
+    <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+        .chat-container {
+            position: fixed;
+            bottom: -25px;
+            right: 20px;
+            width: 400px;
+            margin: 50px auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.2);
+            overflow: hidden;
+            transition: width 0.3s ease-in-out, height 0.3s ease-in-out;
+        }
+        .chat-header {
+            background-color: #0066cc;
+            color: #fff;
+            padding: 10px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .chat-body {
+            height: 400px;
+            padding: 10px;
+            overflow-y: scroll;
+        }
+        .user-message {
+            background-color: #f2f2f2;
+            color: #000;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            float: left;
+        }
+        .chatbot-message {
+            background-color: #0066cc;
+            color: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            float: right;
+            text-align: center;
+        }
+        .chat-footer {
+            padding: 10px;
+        }
+        .chat-footer input[type=text] {
+            width: 80%;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+        }
+        .chat-footer input[type=submit] {
+            width: 20%;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            background-color: #0066cc;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .chat-container.minimized {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: width 0.3s ease-in-out, height 0.3s ease-in-out;
+            background-color: #0066cc;
+            background-image: url('static/Chat icon1.svg');
+            background-size: cover;
+
+        }
+        .chat-container.minimized .chat-header {
+            font-size: 0;
+        }
+        .chat-container.minimized .chat-body {
+        display: none;
+        }
+
+        .chat-container.minimized .chat-footer {
+        display: none;
+        }
+
+        .chat-container.minimized::-webkit-scrollbar {
+         width: 0;
+        background-color: transparent;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="chat-container minimized">
+        <div class="chat-header">
+            Venture's Bot
+        </div>
+        <div class="chat-body" id="chatbot-response"></div>
+        <div class="chat-footer">
+            <form method="POST" action="{{ url_for('get_response') }}">
+                <input type="text" name="user_message" placeholder="Type your message...">
+                <input type="submit" value="Send">
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script>
+        function appendChatbotMessage(message) {
+            var chatbotMessage = $('<div class="chatbot-message"></div>');
+            var chatbotText = $('<span class="typing"></span>').appendTo(chatbotMessage);
+            var characters = message.split('');
+            var delay = 50; // Delay in milliseconds between each character
+
+            chatbotMessage.appendTo('#chatbot-response');
+
+            $.each(characters, function(index, char) {
+                setTimeout(function() {
+                    chatbotText.text(chatbotText.text() + char);
+                }, delay * index);
+            });
+
+            setTimeout(function() {
+                chatbotText.removeClass('typing');
+                $(".chat-body").scrollTop($(".chat-body")[0].scrollHeight);
+            }, delay * characters.length);
+        }
+
+        var isChatOpen = false;
+
+        function toggleChatContainer() {
+            if (isChatOpen) {
+                $(".chat-container").addClass("minimized");
+                isChatOpen = false;
+            } else {
+                $(".chat-container").removeClass("minimized");
+                isChatOpen = true;
+            }
+        }
+
+        $(".chat-container").mouseenter(function() {
+            $(".chat-container").removeClass("minimized");
+        });
+
+
+        $(document).mouseup(function(e) {
+            var chatContainer = $(".chat-container");
+
+            if (!chatContainer.is(e.target) && chatContainer.has(e.target).length === 0) {
+                chatContainer.addClass("minimized");
+            }
+        });
+
+        $(document).ready(function() {
+            $(".chat-container").addClass("minimized");
+        });
+
+        $('form').on('submit', function(event) {
+            event.preventDefault();
+            var userMessage = $('input[name="user_message"]').val();
+            $('#chatbot-response').append('<div class="user-message">' + userMessage + '</div>');
+            $.ajax({
+                url: "{{ url_for('get_response') }}",
+                method: 'POST',
+                data: $('form').serialize(),
+                success: function(response) {
+                    appendChatbotMessage(response);
+                    $('form')[0].reset();
+                }
+            });
+        });
+
+
+    </script>
+</body>
+</html>
